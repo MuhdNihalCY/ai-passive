@@ -1,25 +1,20 @@
-name: Auto-Deploy to DigitalOcean
+# .github/workflows/backup.yml
+name: Database Backup
 
 on:
-  push:
-    branches: [ "main" ]
+  schedule:
+    - cron: '0 3 * * *'  # Runs daily at 3 AM UTC
 
 jobs:
-  deploy:
+  backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Server
+      - name: Backup DB
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.DO_HOST }}
           username: ${{ secrets.DO_USER }}
           password: ${{ secrets.DO_PASSWORD }}
           script: |
-            cd /root/ai-passive-income
-            git pull origin main
-            docker-compose down
-            docker-compose up -d --build
-            docker system prune -f
+            docker exec ai-passive-income-db-1 mysqldump -u wordpress -pwordpress wordpress > backup.sql
+            gzip backup.sql
